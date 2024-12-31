@@ -1,5 +1,5 @@
 #include "KNIGHT.h"
-#include"Map.h"
+
 
 int main()
 {
@@ -24,8 +24,8 @@ int main()
         {
             int axescount;
             const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axescount);
-            perso1.upadate(axes[0],axes[2],window);
-            default_scene.Draw(perso1);    
+            perso1.upadate(axes[0],axes[2],window,map);
+            default_scene.Draw(perso1);   
             showfps(window);
             glfwSwapBuffers(window);                
             lastFrameTime = now;

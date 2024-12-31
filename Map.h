@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include"tile.h"
 
+
 class Map{
     private:
         std::vector<tile> platforme;
@@ -12,4 +13,5 @@ class Map{
         Map();
         Map(const char *filmap);
         void Drawmap(Scene &scene);
+        CollisionBox* get_pl();
 };

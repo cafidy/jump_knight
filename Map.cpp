@@ -16,3 +16,12 @@ void Map::Drawmap(Scene &scene){
     scene.Draw(backg);
     scene.Draw(platforme[0]);
 }
+
+CollisionBox* Map::get_pl(){
+    CollisionBox *col=new CollisionBox[sizeof(platforme)];
+    for (size_t i = 0; i < sizeof(platforme); i++)
+    {
+        col[i]=platforme[i].getCollisionBox();
+    }
+    return col;
+}

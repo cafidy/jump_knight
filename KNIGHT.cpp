@@ -25,8 +25,7 @@ void showfps(GLFWwindow* window)
     }
 }
 KNIGHT::KNIGHT(GLFWwindow*& window_, std::string sprite_folder):
-    Sprite("sprite/static/0.png"),
-    state(fall)
+    Sprite("sprite/static/0.png")
 {
     falling_speed=10.f;
     jumpt=0;
@@ -46,7 +45,8 @@ KNIGHT::KNIGHT(GLFWwindow*& window_, std::string sprite_folder):
         }
         
     }
-    setTexture(animation[0][0]);
+    state=fall;
+    setTexture(animation[1][5]);
     setSize(Vector2f(50,50));
     setPosition(Vector2f(100,100));
     info.speed=0.1;
@@ -55,8 +55,13 @@ KNIGHT::KNIGHT(GLFWwindow*& window_, std::string sprite_folder):
     jump_p=true;
     right=left=false;
     anim_fr=0;
+    right=false;
+    left=false;
+    stati=true;
 }
-void KNIGHT::upadate(float m,float j,GLFWwindow *window){
+void KNIGHT::upadate(float m,float j,GLFWwindow *window,Map map){
+    frame_count++;
+    mv_final.x=0;
     movement(m);
     if (jumpt<0.75 && jump_p==true)
     {
@@ -69,10 +74,12 @@ void KNIGHT::upadate(float m,float j,GLFWwindow *window){
         {
             jumpt=0;
             jump_p=true;
+            jumpt=0;
         }
     }
-        
     
+        
+  
     if (getPosition().x>BBOP_WINDOW_SIZE.x-20)
     {
         mv_final.x=-2;
@@ -85,37 +92,53 @@ void KNIGHT::upadate(float m,float j,GLFWwindow *window){
     {
         mv_final.y=-0.5;
     }
+   
     mv_final.y+=0.25f;
     if (getPosition().y+mv_final.y>BBOP_WINDOW_SIZE.y || getPosition().y+mv_final.y<0)
     {
         mv_final.y=0;
     }
+
     if (anim_fr==9)
     {
         anim_fr=0;
-    }
-    if (mv_final.x==0)
-    {
-        right=false;
-        left=false;
     }
     if (mv_final.y <= 0 && mv_final.y >= -0.25) {
         state = run; 
     } else if (mv_final.y < 0) {
         state = jump_s;   
-    } else {
+    } else if (mv_final.y>0)
+    {
         state = fall;
+    }else if (mv_final.x==0 && mv_final.y==0)
+    {
+        state=still;
     }
+    
+    
+
+    contact(map);
 
     if (state==run)
     {
-         if (right) {
+         if (mv_final.x>0) {
             setTexture(animation[1][anim_fr]);
-        } else if (left) {
-            setTexture(animation[1][anim_fr]); 
-        } else {
-            setTexture(animation[0][0]);
-        }
+            if (left)
+            {
+                flipVertically();
+                anim_fr=0;
+                left=false;
+            } 
+        } else if (mv_final.x<0) {
+            setTexture(animation[1][anim_fr]);
+            if (right)
+            {
+                flipVertically();
+                anim_fr=0;
+                right=false;
+                
+            } 
+        } 
     }else if (state==jump_s)
     {
         if (anim_fr>5)
@@ -124,59 +147,52 @@ void KNIGHT::upadate(float m,float j,GLFWwindow *window){
         }else{
             setTexture(animation[2][anim_fr]);
         }
-    }else{
-
+    }else if (state==still)
+    {
+        animation[0][0];
     }
-
-    move(mv_final);
+    
+    if (anim_fr>8 && state==run)
+    {
+        anim_fr=0;
+    }
+    
+    Vector2f mvv;
+    mvv.x=mv_final.x;
+    mvv.y=mv_final.y;
+    
+    move(mvv);
 }
 void KNIGHT::movement(float value){
     if (value > 0.2 )
     {
-        if (left)
+        mv_final.x+=info.speed/info.acceleration;
+        mv_final.x-=info.deceleration;
+        right=true;
+        if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
         {
-            left=false;
-            anim_fr=0;
-            flipVertically();
-        }else{
-            mv_final.x+=info.speed/info.acceleration;
-            mv_final.x-=info.deceleration;
-            right=true;
-            if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
-            {
-                state=run;
-            }
-            if (frame_count%1==0)
-            {
-                anim_fr+=1;
-            }
-            
+            state=run;
+        }
+        if (frame_count%3==0)
+        {
+            anim_fr++;
         }
     }
     if (value < -0.2)
     {
-        if (right)
+        left=true;
+        mv_final.x-=info.speed/info.acceleration;
+        mv_final.x+=info.deceleration;
+        
+        if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
         {
-            right=false;
-            anim_fr=0;
-            flipVertically();
-        }else{
-            mv_final.x-=info.speed/info.acceleration;
-            mv_final.x+=info.deceleration;
-            left=true;
-            if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
-            {
-                state=run;
-            }
-            
-            if (frame_count%1==0)
-            {
-                anim_fr+=1;
-            }
+            state=run;
         }
         
-        
-       
+        if (frame_count%3==0)
+        {
+            anim_fr++;
+        }
     }
 }
     
@@ -190,4 +206,37 @@ void KNIGHT::jump(float t){
         jumpt+=0.5;
         state=jump_s;
     }
+}
+
+void KNIGHT::contact(Map pp){
+    for (size_t i = 0; i < sizeof(pp.get_pl()); i++)
+    {
+        if (getCollisionBox().check(pp.get_pl()[i]))
+        {
+            float overlap_left = pp.get_pl()[i].getRight() - shapeCollisionBox.getLeft();
+            float overlap_right = shapeCollisionBox.getRight() - pp.get_pl()[i].getLeft();
+            float overlap_top = pp.get_pl()[i].getBottom() - shapeCollisionBox.getTop() - 8.f;
+            float overlap_bottom = shapeCollisionBox.getBottom() - pp.get_pl()[i].getTop()-8.f;
+            float min_overlap = std::min({overlap_right, overlap_left, overlap_top, overlap_bottom});
+
+            if(min_overlap == overlap_top){
+                move(0.f,pp.get_pl()[i].getBottom() - shapeCollisionBox.getTop()+0.1f);
+                mv_final.y = 0.f;
+            }else if(min_overlap == overlap_bottom) {
+                jump_p=true;
+                jumpt=0;
+                move(0.f,-(shapeCollisionBox.getBottom()-pp.get_pl()[i].getTop()));
+                if(state == fall){
+                    state=run;
+                }
+                mv_final.y = 0.f;
+            }else if(min_overlap == overlap_right) {
+                move(-(shapeCollisionBox.getRight() - pp.get_pl()[i].getLeft()), 0.f);
+            }else if (min_overlap == overlap_left) {
+                move(pp.get_pl()[i].getRight() - shapeCollisionBox.getLeft(), 0.f);
+            }
+        }
+        
+    }
+        
 }

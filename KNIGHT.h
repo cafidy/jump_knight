@@ -2,6 +2,8 @@
 #include"iostream"
 #include"vector"
 #include <GLFW/glfw3.h>
+#include"Map.h"
+
 void showfps(GLFWwindow *pWindow);
 struct speed_info{
     float speed;
@@ -21,7 +23,7 @@ class KNIGHT : public Sprite
         Vector2f mv_final;
         bool jump_p;
         unsigned int frame_count;
-        bool right,left;
+        bool right,left,stati;
         speed_info info;
         float jumpt;
         float falling_speed;
@@ -29,9 +31,11 @@ class KNIGHT : public Sprite
         std::vector<Texture> animation[4];
     public:
         KNIGHT(GLFWwindow*& window_, std::string sprite_folder);
-        void upadate(float m,float j,GLFWwindow *window);
+        void upadate(float m,float j,GLFWwindow *window,Map map);
         void movement(float value);
         void jump(float t);
+        void contact(Map pp);
+        void attack(float f);
 };
 
 
