@@ -14,7 +14,11 @@ enum State {
     still = 0 , 
     run = 1, 
     jump_s = 2 , 
-    fall = 3};
+    fall = 3,
+    attack_s=4,
+    jf_at=5,
+    run_at=6
+    };
 struct speed_info;
 class KNIGHT : public Sprite
 {
@@ -28,10 +32,10 @@ class KNIGHT : public Sprite
         float jumpt;
         float falling_speed;
         State state;
-        std::vector<Texture> animation[4];
+        std::vector<Texture> animation[5];
     public:
         KNIGHT(GLFWwindow*& window_, std::string sprite_folder);
-        void upadate(float m,float j,GLFWwindow *window,Map map);
+        void update(float m,float j,GLFWwindow *window,Map map);
         void movement(float value);
         void jump(float t);
         void contact(Map pp);

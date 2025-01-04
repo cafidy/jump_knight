@@ -29,9 +29,9 @@ KNIGHT::KNIGHT(GLFWwindow*& window_, std::string sprite_folder):
 {
     falling_speed=10.f;
     jumpt=0;
-    std::string anim_folder[4] = {"static","run","jump","fall"};
-    int anim_frame_n[4] = {10,10,10};
-    for (int i = 0; i < 3; i++)
+    std::string anim_folder[5] = {"static","run","jump","fall","melee"};
+    int anim_frame_n[5] = {10,10,10,10,8};
+    for (int i = 0; i < 5; i++)
     {
         
         std::string anim_folder_i=sprite_folder+"/"+anim_folder[i];
@@ -58,24 +58,22 @@ KNIGHT::KNIGHT(GLFWwindow*& window_, std::string sprite_folder):
     right=false;
     left=false;
     stati=true;
+    std::cerr<<"end of const"<<std::endl;
 }
-void KNIGHT::upadate(float m,float j,GLFWwindow *window,Map map){
+void KNIGHT::update(float m,float j,GLFWwindow *window,Map map){
+    
+    std::cerr << "Update start" << std::endl;
+    std::cerr << "State: " << state << std::endl;
     frame_count++;
-    mv_final.x=0;
-    movement(m);
+    mv_final.x = 0;
+    std::cerr << "After frame count" << std::endl;
+
     if (jumpt<0.75 && jump_p==true)
     {
         jump(j);
     }else if (jumpt>=1)
     {
         jump_p=false;
-        mv_final.y+=0.5f;
-        if (getPosition().y > 600)
-        {
-            jumpt=0;
-            jump_p=true;
-            jumpt=0;
-        }
     }
     
         
@@ -110,7 +108,7 @@ void KNIGHT::upadate(float m,float j,GLFWwindow *window,Map map){
     } else if (mv_final.y>0)
     {
         state = fall;
-    }else if (mv_final.x==0 && mv_final.y==0)
+    }else if (mv_final.x==0 && mv_final.y>-0.25 && mv_final.y<0)
     {
         state=still;
     }
@@ -155,6 +153,15 @@ void KNIGHT::upadate(float m,float j,GLFWwindow *window,Map map){
     if (anim_fr>8 && state==run)
     {
         anim_fr=0;
+    }else if (anim_fr>8 && state==attack_s)
+    {
+        anim_fr=0;
+        state=still;
+    }
+    
+    if (frame_count%3==0)
+    {
+        anim_fr++;
     }
     
     Vector2f mvv;
@@ -169,14 +176,11 @@ void KNIGHT::movement(float value){
         mv_final.x+=info.speed/info.acceleration;
         mv_final.x-=info.deceleration;
         right=true;
-        if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
+        if (getPosition().y>600 && getPosition().y<700&& state!=jump_s && state!=attack_s)
         {
             state=run;
         }
-        if (frame_count%3==0)
-        {
-            anim_fr++;
-        }
+        
     }
     if (value < -0.2)
     {
@@ -184,15 +188,11 @@ void KNIGHT::movement(float value){
         mv_final.x-=info.speed/info.acceleration;
         mv_final.x+=info.deceleration;
         
-        if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
+        if (getPosition().y>600 && getPosition().y<700&& state!=jump_s && state!=attack_s)
         {
             state=run;
         }
         
-        if (frame_count%3==0)
-        {
-            anim_fr++;
-        }
     }
 }
     
@@ -203,13 +203,16 @@ void KNIGHT::jump(float t){
     if(t>0.1)
     {
         mv_final.y-=2.0f;
-        jumpt+=0.5;
-        state=jump_s;
+        jumpt+=0.25;
+        if (state!=attack_s)
+        {
+            state=jump_s;
+        }
     }
 }
 
 void KNIGHT::contact(Map pp){
-    for (size_t i = 0; i < sizeof(pp.get_pl()); i++)
+    for (size_t i = 0; i < pp.getPlatsize(); i++)
     {
         if (getCollisionBox().check(pp.get_pl()[i]))
         {
@@ -226,7 +229,7 @@ void KNIGHT::contact(Map pp){
                 jump_p=true;
                 jumpt=0;
                 move(0.f,-(shapeCollisionBox.getBottom()-pp.get_pl()[i].getTop()));
-                if(state == fall){
+                if(state == fall &&state!=attack_s){
                     state=run;
                 }
                 mv_final.y = 0.f;
@@ -238,5 +241,19 @@ void KNIGHT::contact(Map pp){
         }
         
     }
+    
         
+}
+
+void KNIGHT::attack(float at){
+    if (at>0.2)
+    {
+        if (state!=attack_s)
+        {
+            anim_fr=0;
+        }
+        
+        state=attack_s;
+    }
+    
 }

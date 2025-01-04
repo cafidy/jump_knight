@@ -8,7 +8,6 @@ int main()
     bbopInit(1024,768,"window name",window);
     Scene default_scene;
     KNIGHT perso1(window,"sprite");
-    std::cout<<"pp"<<std::endl;
     Map map("sprite/background/forest.png");
     const double fpsLimit = 1.0/60.0;
     double lastUpdateTime = 0;  
@@ -23,8 +22,9 @@ int main()
         if ((now - lastFrameTime) >= fpsLimit)
         {
             int axescount;
-            const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axescount);
-            perso1.upadate(axes[0],axes[2],window,map);
+            const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axescount);    
+            perso1.update(axes[0],axes[2],window,map);
+            std::cerr<<"coco"<<std::endl;         
             default_scene.Draw(perso1);   
             showfps(window);
             glfwSwapBuffers(window);                
