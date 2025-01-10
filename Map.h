@@ -2,12 +2,12 @@
 #include"iostream"
 #include"vector"
 #include <GLFW/glfw3.h>
-#include"tile.h"
+
 
 
 class Map{
     private:
-        std::vector<tile> platforme;
+        std::vector<Sprite> platforme;
         Sprite backg;
     public:
         Map();

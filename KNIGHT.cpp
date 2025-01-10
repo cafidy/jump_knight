@@ -27,11 +27,11 @@ void showfps(GLFWwindow* window)
 KNIGHT::KNIGHT(GLFWwindow*& window_, std::string sprite_folder):
     Sprite("sprite/static/0.png")
 {
-    falling_speed=10.f;
+    
     jumpt=0;
-    std::string anim_folder[4] = {"static","run","jump","fall"};
-    int anim_frame_n[4] = {10,10,10};
-    for (int i = 0; i < 3; i++)
+    std::string anim_folder[6] = {"static","run","jump","fall","melee","dash"};
+    int anim_frame_n[6] = {10,10,10,10,8,10};
+    for (int i = 0; i < 6; i++)
     {
         
         std::string anim_folder_i=sprite_folder+"/"+anim_folder[i];
@@ -59,9 +59,10 @@ KNIGHT::KNIGHT(GLFWwindow*& window_, std::string sprite_folder):
     left=false;
     stati=true;
 }
-void KNIGHT::upadate(float m,float j,GLFWwindow *window,Map map){
+void KNIGHT::upadate(float m,float j,char b,GLFWwindow *window,Map map){
     frame_count++;
     mv_final.x=0;
+    dash(b);
     movement(m);
     if (jumpt<0.75 && jump_p==true)
     {
@@ -76,6 +77,10 @@ void KNIGHT::upadate(float m,float j,GLFWwindow *window,Map map){
             jump_p=true;
             jumpt=0;
         }
+    }
+    if (glfwGetTime()-dasht>2)
+    {
+        dash_p=true;
     }
     
         
@@ -110,6 +115,7 @@ void KNIGHT::upadate(float m,float j,GLFWwindow *window,Map map){
     } else if (mv_final.y>0)
     {
         state = fall;
+        anim_fr=0;
     }else if (mv_final.x==0 && mv_final.y==0)
     {
         state=still;
@@ -121,40 +127,57 @@ void KNIGHT::upadate(float m,float j,GLFWwindow *window,Map map){
 
     if (state==run)
     {
-         if (mv_final.x>0) {
-            setTexture(animation[1][anim_fr]);
-            if (left)
-            {
-                flipVertically();
-                anim_fr=0;
-                left=false;
-            } 
-        } else if (mv_final.x<0) {
-            setTexture(animation[1][anim_fr]);
-            if (right)
-            {
-                flipVertically();
-                anim_fr=0;
-                right=false;
-                
-            } 
-        } 
-    }else if (state==jump_s)
+        direction();
+        setTexture(animation[1][anim_fr]);
+    }
+    if (state==dash_s)
     {
+        setTexture(animation[5][anim_fr]);
+        if (frame_count%3==0 && anim_fr<9)
+        {
+            anim_fr++;
+        }
+        if (anim_fr==9)
+        {
+            dash_p=false;
+            state=still;
+            dasht=glfwGetTime();
+            anim_fr=0;
+        }
+        direction();
+        
+        
+    }
+    
+    if (state==jump_s)
+    {
+        
         if (anim_fr>5)
         {
             setTexture(animation[2][6]);
         }else{
+            direction();
             setTexture(animation[2][anim_fr]);
         }
-    }else if (state==still)
+        direction();
+    }
+    if (state==still)
     {
-        animation[0][0];
+        setTexture(animation[0][0]);
     }
     
     if (anim_fr>8 && state==run)
     {
         anim_fr=0;
+    }
+    if (state==fall)
+    {
+        setTexture(animation[3][anim_fr]);
+        if (anim_fr<9)
+        {
+            anim_fr++;
+        }
+        
     }
     
     Vector2f mvv;
@@ -164,35 +187,46 @@ void KNIGHT::upadate(float m,float j,GLFWwindow *window,Map map){
     move(mvv);
 }
 void KNIGHT::movement(float value){
-    if (value > 0.2 )
+    if (state!=dash_s)
     {
-        mv_final.x+=info.speed/info.acceleration;
-        mv_final.x-=info.deceleration;
-        right=true;
-        if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
+        if (value > 0.2 )
         {
-            state=run;
+            mv_final.x+=info.speed/info.acceleration;
+            mv_final.x-=info.deceleration;
+            right=true;
+            if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
+            {
+                state=run;
+            }
+            if (frame_count%3==0)
+            {
+                anim_fr++;
+            }
         }
-        if (frame_count%3==0)
+        if (value < -0.2)
         {
-            anim_fr++;
+            left=true;
+            mv_final.x-=info.speed/info.acceleration;
+            mv_final.x+=info.deceleration;
+            
+            if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
+            {
+                state=still;
+            }
+            
+            if (frame_count%3==0)
+            {
+                anim_fr++;
+            }
         }
-    }
-    if (value < -0.2)
-    {
-        left=true;
-        mv_final.x-=info.speed/info.acceleration;
-        mv_final.x+=info.deceleration;
+    }else{
+        if (value>0.2)
+        {
+            mv_final.x+=5;
+        }else{
+            mv_final.x-=5;
+        }
         
-        if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
-        {
-            state=run;
-        }
-        
-        if (frame_count%3==0)
-        {
-            anim_fr++;
-        }
     }
 }
     
@@ -200,11 +234,12 @@ void KNIGHT::movement(float value){
     
 
 void KNIGHT::jump(float t){
-    if(t>0.1)
+    if(t>0.1 && state!=dash_s)
     {
         mv_final.y-=2.0f;
-        jumpt+=0.5;
+        jumpt+=0.25;
         state=jump_s;
+        anim_fr++;
     }
 }
 
@@ -223,13 +258,17 @@ void KNIGHT::contact(Map pp){
                 move(0.f,pp.get_pl()[i].getBottom() - shapeCollisionBox.getTop()+0.1f);
                 mv_final.y = 0.f;
             }else if(min_overlap == overlap_bottom) {
-                jump_p=true;
-                jumpt=0;
+                
                 move(0.f,-(shapeCollisionBox.getBottom()-pp.get_pl()[i].getTop()));
                 if(state == fall){
                     state=run;
                 }
-                mv_final.y = 0.f;
+                if (mv_final.y>0)
+                {
+                    mv_final.y=0;
+                }
+                jump_p=true;
+                jumpt=0;
             }else if(min_overlap == overlap_right) {
                 move(-(shapeCollisionBox.getRight() - pp.get_pl()[i].getLeft()), 0.f);
             }else if (min_overlap == overlap_left) {
@@ -239,4 +278,50 @@ void KNIGHT::contact(Map pp){
         
     }
         
+}
+void KNIGHT::attack(float a){
+    if (a>0.2 && state!=jump_s)
+    {
+        state=attack_s;
+    }
+    
+}
+
+void KNIGHT::dash(char button){
+    if (GLFW_PRESS==button)
+    {
+        if (state!=dash_s && dash_p==true)
+        {
+            anim_fr=0;
+        }
+        state=dash_s;
+        mv_final.x=0;
+        
+    }
+    
+}
+
+void KNIGHT::direction(){
+    if (mv_final.x>0) {
+        if (left)
+        {
+            flipVertically();
+            left=false;
+            if (state!=jump_s)
+            {
+                anim_fr=0;
+            }
+            
+        } 
+    } else if (mv_final.x<0) {
+        if (right)
+        {
+            flipVertically();
+            right=false;
+            if (state!=jump_s)
+            {
+                anim_fr=0;
+            }
+        } 
+    } 
 }

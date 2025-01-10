@@ -24,7 +24,11 @@ int main()
         {
             int axescount;
             const float *axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axescount);
-            perso1.upadate(axes[0],axes[2],window,map);
+            int buttoncount;
+            const unsigned char *button = glfwGetJoystickButtons(GLFW_JOYSTICK_1 , &buttoncount);
+            perso1.upadate(axes[0],axes[2],button[1],window,map);
+            std::cerr<<axes[3]<<std::endl;
+            perso1.attack(axes[3]);
             default_scene.Draw(perso1);   
             showfps(window);
             glfwSwapBuffers(window);                
