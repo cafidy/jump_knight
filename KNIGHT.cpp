@@ -58,10 +58,12 @@ KNIGHT::KNIGHT(GLFWwindow*& window_, std::string sprite_folder):
     right=false;
     left=false;
     stati=true;
+    dash_p=false;
 }
 void KNIGHT::upadate(float m,float j,char b,GLFWwindow *window,Map map){
     frame_count++;
     mv_final.x=0;
+    
     dash(b);
     movement(m);
     if (jumpt<0.75 && jump_p==true)
@@ -104,10 +106,7 @@ void KNIGHT::upadate(float m,float j,char b,GLFWwindow *window,Map map){
         mv_final.y=0;
     }
 
-    if (anim_fr==9)
-    {
-        anim_fr=0;
-    }
+    
     if (mv_final.y <= 0 && mv_final.y >= -0.25) {
         state = run; 
     } else if (mv_final.y < 0) {
@@ -129,6 +128,7 @@ void KNIGHT::upadate(float m,float j,char b,GLFWwindow *window,Map map){
     {
         direction();
         setTexture(animation[1][anim_fr]);
+        
     }
     if (state==dash_s)
     {
@@ -137,7 +137,7 @@ void KNIGHT::upadate(float m,float j,char b,GLFWwindow *window,Map map){
         {
             anim_fr++;
         }
-        if (anim_fr==9)
+        if (anim_fr>=9)
         {
             dash_p=false;
             state=still;
@@ -156,8 +156,10 @@ void KNIGHT::upadate(float m,float j,char b,GLFWwindow *window,Map map){
         {
             setTexture(animation[2][6]);
         }else{
-            direction();
+            
             setTexture(animation[2][anim_fr]);
+            direction();
+            anim_fr++;
         }
         direction();
     }
@@ -211,7 +213,7 @@ void KNIGHT::movement(float value){
             
             if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
             {
-                state=still;
+                state=run;
             }
             
             if (frame_count%3==0)
@@ -223,10 +225,10 @@ void KNIGHT::movement(float value){
         if (value>0.2)
         {
             mv_final.x+=5;
-        }else{
+        }else if (value<-0.2)
+        {
             mv_final.x-=5;
         }
-        
     }
 }
     
@@ -288,9 +290,9 @@ void KNIGHT::attack(float a){
 }
 
 void KNIGHT::dash(char button){
-    if (GLFW_PRESS==button)
+    if (GLFW_PRESS==button && dash_p==true)
     {
-        if (state!=dash_s && dash_p==true)
+        if (state!=dash_s)
         {
             anim_fr=0;
         }
@@ -307,7 +309,7 @@ void KNIGHT::direction(){
         {
             flipVertically();
             left=false;
-            if (state!=jump_s)
+            if (state!=jump_s && state!=dash_s)
             {
                 anim_fr=0;
             }
@@ -318,7 +320,7 @@ void KNIGHT::direction(){
         {
             flipVertically();
             right=false;
-            if (state!=jump_s)
+            if (state!=jump_s && state!=dash_s)
             {
                 anim_fr=0;
             }
