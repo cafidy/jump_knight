@@ -10,6 +10,11 @@ struct speed_info{
     float acceleration;
     float deceleration;
 };
+struct dash_info{
+    bool dright;
+    bool dleft;
+    bool nodash;
+};
 enum State {
     still = 0 , 
     run = 1, 
@@ -31,8 +36,9 @@ class KNIGHT : public Sprite
         double dasht;
         speed_info info;
         float jumpt;
-        float falling_speed;
+        dash_info dinfo;
         State state;
+        bool enddash;
         std::vector<Texture> animation[6];
     public:
         KNIGHT(GLFWwindow*& window_, std::string sprite_folder);
@@ -40,9 +46,10 @@ class KNIGHT : public Sprite
         void movement(float value);
         void jump(float t);
         void contact(Map pp);
-        void attack(float f);
-        void dash(char buttu);
+        void attack(char f);
+        void dash(char buttu , float d);
         void direction();
+        void verif_state();
 };
 
 

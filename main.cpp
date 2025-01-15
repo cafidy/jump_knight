@@ -27,7 +27,7 @@ int main()
             int buttoncount;
             const unsigned char *button = glfwGetJoystickButtons(GLFW_JOYSTICK_1 , &buttoncount);
             perso1.upadate(axes[0],axes[2],button[1],window,map);
-            perso1.attack(axes[3]);
+            perso1.attack(button[2]);
             default_scene.Draw(perso1);   
             showfps(window);
             glfwSwapBuffers(window);                

@@ -24,6 +24,9 @@ void showfps(GLFWwindow* window)
         lastTime = currentTime;
     }
 }
+/* @brief constructeur de la classe KNIGHT
+        @param la fenetre 
+        @param le fichier ou situe les sprite*/
 KNIGHT::KNIGHT(GLFWwindow*& window_, std::string sprite_folder):
     Sprite("sprite/static/0.png")
 {
@@ -58,13 +61,20 @@ KNIGHT::KNIGHT(GLFWwindow*& window_, std::string sprite_folder):
     right=false;
     left=false;
     stati=true;
-    dash_p=false;
+    dasht=glfwGetTime();
+    dash_p=true;
+    enddash=false;
 }
+/* @brief update de KNIGHT
+        @param m float representant l'axe de la manette
+        @param j float r2 de la mannette
+        @param b button du dash
+        @param window la fenetre 
+        @param map la carte de jeu */
 void KNIGHT::upadate(float m,float j,char b,GLFWwindow *window,Map map){
     frame_count++;
     mv_final.x=0;
-    
-    dash(b);
+    dash(b , m);
     movement(m);
     if (jumpt<0.75 && jump_p==true)
     {
@@ -80,7 +90,7 @@ void KNIGHT::upadate(float m,float j,char b,GLFWwindow *window,Map map){
             jumpt=0;
         }
     }
-    if (glfwGetTime()-dasht>2)
+    if (glfwGetTime()-dasht>2.0 && enddash)
     {
         dash_p=true;
     }
@@ -95,99 +105,32 @@ void KNIGHT::upadate(float m,float j,char b,GLFWwindow *window,Map map){
     {
         mv_final.x=2;
     }
-    if (getPosition().y>650)
-    {
-        mv_final.y=-0.5;
-    }
    
     mv_final.y+=0.25f;
-    if (getPosition().y+mv_final.y>BBOP_WINDOW_SIZE.y || getPosition().y+mv_final.y<0)
-    {
-        mv_final.y=0;
-    }
-
-    
-    if (mv_final.y <= 0 && mv_final.y >= -0.25) {
-        state = run; 
-    } else if (mv_final.y < 0) {
-        state = jump_s;   
-    } else if (mv_final.y>0)
-    {
-        state = fall;
-        anim_fr=0;
-    }else if (mv_final.x==0 && mv_final.y==0)
-    {
-        state=still;
-    }
-    
     
 
     contact(map);
+    if (mv_final.y>0)
+    {
+        state=fall;
+    }
+    
+    verif_state();
+    
+    
+    
 
-    if (state==run)
-    {
-        direction();
-        setTexture(animation[1][anim_fr]);
-        
-    }
-    if (state==dash_s)
-    {
-        setTexture(animation[5][anim_fr]);
-        if (frame_count%3==0 && anim_fr<9)
-        {
-            anim_fr++;
-        }
-        if (anim_fr>=9)
-        {
-            dash_p=false;
-            state=still;
-            dasht=glfwGetTime();
-            anim_fr=0;
-        }
-        direction();
-        
-        
-    }
     
-    if (state==jump_s)
-    {
-        
-        if (anim_fr>5)
-        {
-            setTexture(animation[2][6]);
-        }else{
-            
-            setTexture(animation[2][anim_fr]);
-            direction();
-            anim_fr++;
-        }
-        direction();
-    }
-    if (state==still)
-    {
-        setTexture(animation[0][0]);
-    }
     
-    if (anim_fr>8 && state==run)
-    {
-        anim_fr=0;
-    }
-    if (state==fall)
-    {
-        setTexture(animation[3][anim_fr]);
-        if (anim_fr<9)
-        {
-            anim_fr++;
-        }
-        
-    }
-    
+    std::cerr<<state<<std::endl;
     Vector2f mvv;
     mvv.x=mv_final.x;
     mvv.y=mv_final.y;
     
     move(mvv);
 }
+/* @brief fonction de deplacement
+        @param value float axe de la manette pour le deplacement*/
 void KNIGHT::movement(float value){
     if (state!=dash_s)
     {
@@ -196,45 +139,38 @@ void KNIGHT::movement(float value){
             mv_final.x+=info.speed/info.acceleration;
             mv_final.x-=info.deceleration;
             right=true;
-            if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
+            if (state!=jump_s )
             {
+                std::cerr<<"coco"<<std::endl;
                 state=run;
             }
-            if (frame_count%3==0)
-            {
-                anim_fr++;
-            }
+        
         }
-        if (value < -0.2)
+        else if (value < -0.2)
         {
             left=true;
             mv_final.x-=info.speed/info.acceleration;
             mv_final.x+=info.deceleration;
             
-            if (getPosition().y>600 && getPosition().y<700&& state!=jump_s)
+            if (state!=jump_s)
             {
                 state=run;
             }
             
-            if (frame_count%3==0)
-            {
-                anim_fr++;
-            }
-        }
-    }else{
-        if (value>0.2)
+            
+        }else if (state!=jump_s)
         {
-            mv_final.x+=5;
-        }else if (value<-0.2)
-        {
-            mv_final.x-=5;
+            state=still;
         }
+        
     }
+
 }
     
     
     
-
+/* @brief fonction de saut
+        @param t float de la gachette pour le saut*/
 void KNIGHT::jump(float t){
     if(t>0.1 && state!=dash_s)
     {
@@ -244,7 +180,8 @@ void KNIGHT::jump(float t){
         anim_fr++;
     }
 }
-
+/* @brief fonction verifiant les contact avec les element de la carte
+        @param p carte avec les different plateforme*/
 void KNIGHT::contact(Map pp){
     for (size_t i = 0; i < sizeof(pp.get_pl()); i++)
     {
@@ -281,28 +218,50 @@ void KNIGHT::contact(Map pp){
     }
         
 }
-void KNIGHT::attack(float a){
-    if (a>0.2 && state!=jump_s)
-    {
+/* @brief fontion d'attaque
+        @param nu bouton d'attaque */
+void KNIGHT::attack(char bu){
+    if (GLFW_PRESS==bu)
+    {if (frame_count%3==0)
+            {
+                anim_fr++;
+            }
         state=attack_s;
     }
     
 }
 
-void KNIGHT::dash(char button){
+/* @brief fonction de dash de KNIGHT
+        @param button boutton du dash
+        float d direction du dash*/
+void KNIGHT::dash(char button , float d){
+    std::cerr<<dash_p<<std::endl;
     if (GLFW_PRESS==button && dash_p==true)
     {
         if (state!=dash_s)
-        {
+        {;
             anim_fr=0;
         }
         state=dash_s;
         mv_final.x=0;
-        
+        dash_p=false;
+        enddash=false;
+        dinfo.dleft=false;
+        dinfo.dright=false;
+        dinfo.nodash=false;
+        if (d>0)
+        {
+            dinfo.dright=true;
+        }else if (d<0)
+        {
+            dinfo.dleft=true;
+        }else{
+            dinfo.nodash=true;
+        }
     }
     
 }
-
+/* @brief verifie la direction du perso pour le sprite*/
 void KNIGHT::direction(){
     if (mv_final.x>0) {
         if (left)
@@ -322,8 +281,100 @@ void KNIGHT::direction(){
             right=false;
             if (state!=jump_s && state!=dash_s)
             {
+;
                 anim_fr=0;
             }
         } 
     } 
+}
+
+/* @brief verifie l'etat et s'occupe de des sprite et autre*/
+void KNIGHT::verif_state(){
+
+    if (state==run)
+    {
+        
+        setTexture(animation[1][anim_fr]);
+        if (anim_fr<9)
+        {
+            if (frame_count%3==0 )
+            {
+                anim_fr++;
+            }
+        }else{
+            
+            anim_fr=0;
+        }
+        direction();
+    }
+    if (state==dash_s)
+    {
+        setTexture(animation[5][anim_fr]);
+        if (frame_count%3==0 )
+        {
+            anim_fr++;
+        }
+        if (anim_fr>=9)
+        {
+            state=still;
+            dasht=glfwGetTime();;
+            anim_fr=0;
+            enddash=true;
+        }
+        if (dinfo.dleft)
+        {
+            mv_final.x-=10.0f;
+        }else if (dinfo.dright)
+        {
+            mv_final.x+=10.0f;
+        }
+        mv_final.y=0;
+        
+        direction();
+        
+        
+    }
+    if (state==attack_s)
+    {
+        setTexture(animation[4][anim_fr]);
+        if (anim_fr==9)
+        {
+            state=still;;
+            anim_fr=0;
+        }else{
+            anim_fr++;
+        }
+        direction();
+    }
+    
+    if (state==jump_s)
+    {
+        
+        if (anim_fr>5)
+        {
+            setTexture(animation[2][6]);
+        }else{
+            
+            setTexture(animation[2][anim_fr]);
+            direction();
+            anim_fr++;
+        }
+        direction();
+    }
+    if (state==still)
+    {
+        setTexture(animation[0][0]);
+    }
+    
+    
+    if (state==fall)
+    {
+        setTexture(animation[3][anim_fr]);
+        if (anim_fr<9)
+        {
+            anim_fr++;
+        }
+        direction();
+        
+    }
 }
