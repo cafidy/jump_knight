@@ -15,13 +15,15 @@ struct dash_info{
     bool dleft;
     bool nodash;
 };
+
 enum State {
     still = 0 , 
     run = 1, 
     jump_s = 2 , 
     fall = 3,
     attack_s = 4,
-    dash_s=5
+    dash_s=5,
+    hit=6
     };
 struct speed_info;
 class KNIGHT : public Sprite
@@ -33,6 +35,8 @@ class KNIGHT : public Sprite
         unsigned int frame_count;
         bool right,left,stati;
         bool dash_p;
+        bool atr;
+        bool atl;
         double dasht;
         speed_info info;
         float jumpt;
@@ -46,10 +50,13 @@ class KNIGHT : public Sprite
         void movement(float value);
         void jump(float t);
         void contact(Map pp);
-        void attack(char f);
+        void attack(char f , float c);
         void dash(char buttu , float d);
         void direction();
         void verif_state();
+        int return_state();
+        void get_hit(KNIGHT perso);
+        
 };
 
 

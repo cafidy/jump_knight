@@ -110,7 +110,7 @@ void KNIGHT::upadate(float m,float j,char b,GLFWwindow *window,Map map){
     
 
     contact(map);
-    if (mv_final.y>0)
+    if (mv_final.y>0 && state!=dash_s && state!=attack_s)
     {
         state=fall;
     }
@@ -122,7 +122,7 @@ void KNIGHT::upadate(float m,float j,char b,GLFWwindow *window,Map map){
 
     
     
-    std::cerr<<state<<std::endl;
+    
     Vector2f mvv;
     mvv.x=mv_final.x;
     mvv.y=mv_final.y;
@@ -132,7 +132,7 @@ void KNIGHT::upadate(float m,float j,char b,GLFWwindow *window,Map map){
 /* @brief fonction de deplacement
         @param value float axe de la manette pour le deplacement*/
 void KNIGHT::movement(float value){
-    if (state!=dash_s)
+    if (state!=dash_s && state!=attack_s)
     {
         if (value > 0.2 )
         {
@@ -141,7 +141,7 @@ void KNIGHT::movement(float value){
             right=true;
             if (state!=jump_s )
             {
-                std::cerr<<"coco"<<std::endl;
+                
                 state=run;
             }
         
@@ -172,7 +172,7 @@ void KNIGHT::movement(float value){
 /* @brief fonction de saut
         @param t float de la gachette pour le saut*/
 void KNIGHT::jump(float t){
-    if(t>0.1 && state!=dash_s)
+    if(t>0.1 && state!=dash_s && state!=attack_s)
     {
         mv_final.y-=2.0f;
         jumpt+=0.25;
@@ -220,13 +220,19 @@ void KNIGHT::contact(Map pp){
 }
 /* @brief fontion d'attaque
         @param nu bouton d'attaque */
-void KNIGHT::attack(char bu){
-    if (GLFW_PRESS==bu)
-    {if (frame_count%3==0)
-            {
-                anim_fr++;
-            }
+void KNIGHT::attack(char bu , float c){
+    if (GLFW_PRESS==bu && state!=attack_s && state!=jump_s && state!=fall)
+    {
+        atl=false;
+        atr=false;
         state=attack_s;
+        if (c>0)
+        {
+            atr=true;
+        }else if (c<0)
+        {
+            atl=true;
+        }
     }
     
 }
@@ -235,7 +241,7 @@ void KNIGHT::attack(char bu){
         @param button boutton du dash
         float d direction du dash*/
 void KNIGHT::dash(char button , float d){
-    std::cerr<<dash_p<<std::endl;
+    
     if (GLFW_PRESS==button && dash_p==true)
     {
         if (state!=dash_s)
@@ -243,7 +249,7 @@ void KNIGHT::dash(char button , float d){
             anim_fr=0;
         }
         state=dash_s;
-        mv_final.x=0;
+        mv_final.x=0.0f;
         dash_p=false;
         enddash=false;
         dinfo.dleft=false;
@@ -268,7 +274,7 @@ void KNIGHT::direction(){
         {
             flipVertically();
             left=false;
-            if (state!=jump_s && state!=dash_s)
+            if (state!=jump_s && state!=dash_s && state!=attack_s)
             {
                 anim_fr=0;
             }
@@ -279,7 +285,7 @@ void KNIGHT::direction(){
         {
             flipVertically();
             right=false;
-            if (state!=jump_s && state!=dash_s)
+            if (state!=jump_s && state!=dash_s && state!=attack_s)
             {
 ;
                 anim_fr=0;
@@ -310,6 +316,7 @@ void KNIGHT::verif_state(){
     if (state==dash_s)
     {
         setTexture(animation[5][anim_fr]);
+        mv_final.y=0;
         if (frame_count%3==0 )
         {
             anim_fr++;
@@ -328,7 +335,7 @@ void KNIGHT::verif_state(){
         {
             mv_final.x+=10.0f;
         }
-        mv_final.y=0;
+        
         
         direction();
         
@@ -337,11 +344,12 @@ void KNIGHT::verif_state(){
     if (state==attack_s)
     {
         setTexture(animation[4][anim_fr]);
-        if (anim_fr==9)
+        if (anim_fr==8)
         {
             state=still;;
             anim_fr=0;
-        }else{
+        }else if(frame_count%3==0){
+
             anim_fr++;
         }
         direction();
@@ -378,3 +386,37 @@ void KNIGHT::verif_state(){
         
     }
 }
+
+int KNIGHT::return_state(){
+    return state;
+}
+
+void KNIGHT::get_hit(KNIGHT perso){
+        if (perso.return_state()==attack_s)
+        {
+            if (getCollisionBox().check(perso.getCollisionBox()))
+            {
+                float overlap_left = perso.getCollisionBox().getRight() - shapeCollisionBox.getLeft();
+                float overlap_right = shapeCollisionBox.getRight() - perso.getCollisionBox().getLeft();
+                float overlap_top = perso.getCollisionBox().getBottom() - shapeCollisionBox.getTop() - 8.f;
+                float overlap_bottom = shapeCollisionBox.getBottom() - perso.getCollisionBox().getTop()-8.f;
+                float min_overlap = std::min({overlap_right, overlap_left, overlap_top, overlap_bottom});
+                mv_final.y=0;
+                mv_final.x=0;
+                state=hit;
+                if(min_overlap == overlap_top){   
+                    mv_final.y-=10.0f;
+                    mv_final.x+=10.0f;
+                }else if(min_overlap == overlap_bottom) {
+                    mv_final.y+=10.0f;
+                }else if(min_overlap == overlap_right) {
+                    mv_final.x+=10.0f;
+                }else if (min_overlap == overlap_left) {
+                    mv_final.x-=10.0f;
+                }
+            }
+            
+        }
+        
+}
+    
